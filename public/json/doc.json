@@ -1,0 +1,205 @@
+{
+  "id": "",
+  "name": "作品标题A",
+  "scenes": [
+    {
+      "id": "xxx1",
+      "name": "场景1",
+      "url": "3d/images/scene.jpeg",
+      "params": {
+        "near": 0.1,
+        "far": 100,
+        "fov": 100
+      },
+      "hotSpots": [
+        {
+          "id": "5WGJjxAM7TTRNMwJ",
+          "iconType": "sys",
+          "iconPath": "img/arrow2.png",
+          "iconSize": 80,
+          "hotType": "scene",
+          "gif": true,
+          "texture": {
+            "horizontalNum": 1,
+            "verticalNum": 25,
+            "numTiles": 25,
+            "duration": 50
+          },
+          "pos": {
+            "x": 0.0602026862144272,
+            "y": -0.21146735384612977,
+            "z": 0.25291271496787665
+          },
+          "title": {
+            "label": "场景3",
+            "show": true
+          },
+          "value": "xxx3"
+        },
+        {
+          "id": "1",
+          "iconType": "sys",
+          "iconSize": 100,
+          "iconPath": "img/arrow1.png",
+          "hotType": "scene",
+          "gif": true,
+          "texture": {
+            "horizontalNum": 1,
+            "verticalNum": 25,
+            "numTiles": 25,
+            "duration": 50
+          },
+          "pos": {
+            "x": 0,
+            "y": 0,
+            "z": -0.2
+          },
+          "value": "xxx2",
+          "title": {
+            "label": "场景二",
+            "show": true
+          }
+        },
+        {
+          "id": "HCesjXFb7fdaFxzD",
+          "iconType": "sys",
+          "iconPath": "img/new_spotd1.png",
+          "iconSize": 100,
+          "hotType": "scene",
+          "gif": false,
+          "pos": {
+            "x": 0.30524863764869775,
+            "y": 0.058727925811606255,
+            "z": -0.30855358923230314
+          },
+          "title": {
+            "label": "wwwww",
+            "show": true
+          }
+        }
+      ],
+      "cameraPos": {
+        "x": 0.09999999999999998,
+        "y": 1.224646799147353e-17,
+        "z": 6.123233995736765e-18
+      },
+      "angleX": 90
+    },
+    {
+      "id": "xxx2",
+      "name": "场景2",
+      "url": "3d/images/scene1.jpeg",
+      "params": {
+        "near": 0.1,
+        "far": 100,
+        "fov": 90,
+        "minPolarAngle": -90,
+        "maxPolarAngle": 90,
+        "minAzimuthAngle": -180,
+        "maxAzimuthAngle": 180
+      },
+      "hotSpots": [
+        {
+          "id": "b1",
+          "iconType": "sys",
+          "iconSize": 100,
+          "iconPath": "img/arrow2.png",
+          "hotType": "scene",
+          "gif": true,
+          "texture": {
+            "horizontalNum": 1,
+            "verticalNum": 25,
+            "numTiles": 25,
+            "duration": 50
+          },
+          "pos": {
+            "x": 0.03987949622495221,
+            "y": 0.2988036522039401,
+            "z": 0.09436614939449467
+          },
+          "value": "xxx3",
+          "title": {
+            "label": "场景三",
+            "show": true
+          }
+        }
+      ],
+      "cameraPos": {
+        "x": -4.87341345152626e-8,
+        "y": -0.09999999999995005,
+        "z": 8.732624540095244e-8
+      },
+      "angleX": -29.164563915397526
+    },
+    {
+      "id": "xxx3",
+      "name": "场景3",
+      "url": "3d/images/scene2.jpeg",
+      "params": {
+        "near": 0.1,
+        "far": 100,
+        "fov": 90,
+        "minPolarAngle": -90,
+        "maxPolarAngle": 90,
+        "minAzimuthAngle": -180,
+        "maxAzimuthAngle": 180
+      },
+      "hotSpots": [
+        {
+          "id": "jsKR4HHrNjMKDkEG",
+          "iconType": "sys",
+          "iconPath": "img/arrow2.png",
+          "iconSize": 100,
+          "hotType": "scene",
+          "gif": true,
+          "texture": {
+            "horizontalNum": 1,
+            "verticalNum": 25,
+            "numTiles": 25,
+            "duration": 50
+          },
+          "pos": {
+            "x": 0.08906231671818418,
+            "y": 0.05227008654042249,
+            "z": -0.29176331729743343
+          },
+          "value": "xxx1",
+          "title": {
+            "label": "场景一",
+            "show": true
+          }
+        }
+      ],
+      "cameraPos": {
+        "x": -0.022077129771234796,
+        "y": 0.00836773656445237,
+        "z": 0.09717294544188723
+      },
+      "angleX": 0
+    }
+  ],
+  "sandTable": {
+    "url": "img/sandTable.png",
+    "markers": [
+      {
+        "pos": {
+          "x": 40,
+          "y": 90
+        },
+        "angle": 90,
+        "name": "场景1",
+        "sceneId": "xxx1"
+      },
+      {
+        "pos": {
+          "x": 120,
+          "y": 90
+        },
+        "angle": 0,
+        "diffAngle": -29.164563915397526,
+        "name": "场景2",
+        "sceneId": "xxx2"
+      }
+    ]
+  }
+}
