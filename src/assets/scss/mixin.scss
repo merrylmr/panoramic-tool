@@ -1,50 +1,49 @@
 @mixin clearfix {
-    &:after {
-        content: "";
-        display: table;
-        clear: both;
-    }
+  &:after {
+    content: '';
+    display: table;
+    clear: both;
+  }
 }
 
 @mixin scrollBar {
-    &::-webkit-scrollbar-track-piece {
-        background: #d3dce6;
-    }
+  &::-webkit-scrollbar-track-piece {
+    background: #d3dce6;
+  }
 
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
 
-    &::-webkit-scrollbar-thumb {
-        background: #99a9bf;
-        border-radius: 20px;
-    }
+  &::-webkit-scrollbar-thumb {
+    background: #99a9bf;
+    border-radius: 20px;
+  }
 }
 
 @mixin relative {
-    position: relative;
-    width: 100%;
-    height: 100%;
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 @mixin flex($justify-content: flex-start, $align-items: flex-start) {
-    display: flex;
-    justify-content: $justify-content;
-    align-items: $align-items;
+  display: flex;
+  justify-content: $justify-content;
+  align-items: $align-items;
 }
 
-
 /*超出一行省略号*/
-@mixin text-over-one{
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+@mixin text-over-one {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 /*两行超出文字省略号*/
 @mixin text-over-two {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }

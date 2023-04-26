@@ -2,6 +2,7 @@
   "name": "panoramic-tool",
   "version": "0.0.0",
   "private": true,
+  "homepage": "https://github.com/merrylmr/panoramic-tool",
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build-only",
