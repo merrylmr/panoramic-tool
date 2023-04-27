@@ -108,6 +108,7 @@ export default defineComponent({
     }
     const initContent = async (data: SceneData) => {
       const texture = await textureLoaderHandle(data.url)
+      // @ts-ignore
       const sphereMaterial = new THREE.MeshBasicMaterial({map: texture})
       const sphereGeometry = new THREE.SphereGeometry(1, 50, 50)
       // 贴图内翻
