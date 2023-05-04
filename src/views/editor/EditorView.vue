@@ -3,18 +3,15 @@ import type {Doc, Pos, Hot, menuItem, SceneData, Marker} from '@/custom_types/in
 import {defineComponent, onMounted, reactive, toRefs, computed, nextTick} from 'vue'
 // @ts-ignore
 import docJSon from 'json/doc.json'
-// @ts-ignore
-import {pointInSceneView, screenVector2World, worldVector2Screen} from './common.js'
-// @ts-ignore
-import {ICON_MAP, SYS_ICON_MAP1} from '@/assets/js/const.ts'
-// @ts-ignore
+import {pointInSceneView, screenVector2World, worldVector2Screen} from './common'
+import {ICON_MAP, SYS_ICON_MAP1} from '@/assets/js/const'
 import * as THREE from 'three'
-// @ts-ignore
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
-// @ts-ignore
 import {Camera, Mesh, Scene, Texture, WebGLRenderer} from 'three'
 import * as _ from 'lodash'
 import {useRouter, useRoute} from 'vue-router'
+import HotSpot from "@/views/editor/comps/HotSpot.vue";
+import SandTable from "@/views/editor/comps/SandTable.vue";
 
 interface Props {
   doc: Doc
@@ -25,12 +22,12 @@ interface Props {
   activeIndex: number
   activeMarkerIndex: number
   params: any
-  isShowPreviewDlg: boolean
+  isShowPreviewDlg: boolean,
 }
 
 export default defineComponent({
   name: 'EditorView',
-
+  components: {HotSpot, SandTable},
   setup(props, context) {
     let container: any = null
     let scene: Scene = new Scene()
@@ -38,23 +35,25 @@ export default defineComponent({
     let renderer: WebGLRenderer = new WebGLRenderer()
     let controls: OrbitControls | any = null
     const $route = useRoute()
+    let sphereInstance = new Mesh()
 
     const data: Props = reactive({
       doc: docJSon,
-      activeName: 'view',
+      activeName: 'sandTable',
       uniqueId: '',
       isLoading: true,
       activePoint: {},
       activeIndex: 0,
       activeMarkerIndex: 0,
       params: {},
-      isShowPreviewDlg: false
+      isShowPreviewDlg: false,
+      sphere: new Mesh()
     })
     const hotSpots = computed(() => {
       return data.doc.scenes[data.activeIndex].hotSpots
     })
 
-    const activePoint = computed(() => {
+    const activeItem = computed(() => {
       return data.doc.scenes[data.activeIndex]
     })
 
@@ -115,6 +114,7 @@ export default defineComponent({
       sphereGeometry.scale(1, 1, -1)
       const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
       scene.add(sphere)
+      sphereInstance = sphere;
     }
 
     const textureLoaderHandle = (url: string) => {
@@ -199,12 +199,55 @@ export default defineComponent({
         icon: 'mdi-map-marker-outline'
       }
     ]
+    const findSandMarkerIndex = (sceneId: string) => {
+      const sandTable = data.doc.sandTable.markers;
+      console.log('sandTable:', sandTable)
+      return sandTable.findIndex(item => {
+        return item.sceneId === sceneId
+      })
+    }
+    const createThumbnail = () => {
 
+    }
+    const changeSceneHandle = async (index: number) => {
+      const sceneX = data.doc.scenes[index];
+      if (data.activeName === 'sandTable') {
+        data.activeMarkerIndex = findSandMarkerIndex(sceneX.id)
+        console.log('activeMarkerIndex:', data.activeMarkerIndex);
+      }
+      data.activeIndex = index;
+      data.params = sceneX.params;
+
+      // 选中的热点置空
+      data.activePoint = {};
+      // TODO:当前的场景重新渲染 + 生成缩略图
+      console.log('activeItem:', activeItem.value.url);
+      const texture = await textureLoaderHandle(activeItem.value.url)
+      // @ts-ignore
+      const sphereMaterial = new THREE.MeshBasicMaterial({map: texture});
+      console.log('data.shapre', sphereInstance)
+      // 修改贴图
+      sphereInstance.material = sphereMaterial;
+
+      camera.fov = data.params.fov;
+      camera.near = data.params.near;
+      camera.far = data.params.far;
+      // 更新摄像机投影矩阵。在任何参数被改变以后必须被调用
+      camera.updateProjectionMatrix();
+
+      // 相机位置
+      const cameraPos = activeItem.value.cameraPos;
+      camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z)
+      // important:通过参数更新相机位置，必须调用controls的update才会生效
+      controls.update();
+      renderer.render(scene, camera)
+
+      createThumbnail();
+    }
     return {
       _,
       ...refData,
       hotSpots,
-      activePoint,
       transformStyle,
       menuNav: menuNav,
       ICON_MAP,
@@ -221,8 +264,8 @@ export default defineComponent({
       },
       pointMouseDownHandle(e: MouseEvent, item: Marker, index: number) {
       },
-      changeSceneHandle(index: number) {
-      },
+      findSandMarkerIndex,
+      changeSceneHandle,
       changeFovParamsHandle() {
       },
       changeHandle(v: any, key: string) {
@@ -237,7 +280,11 @@ export default defineComponent({
       },
       changeSandTableHandle() {
       },
-      changeMarkerIndexHandle() {
+      changeMarkerIndexHandle(i: number, item: Marker) {
+        data.activeMarkerIndex = i;
+        //  切换场景
+        const {index} = findTargetScene(item.sceneId);
+        changeSceneHandle(index)
       }
     }
   }
@@ -274,13 +321,13 @@ export default defineComponent({
       <div class="stage">
         <div class="wrapper">
           <div class="view-area" id="container"></div>
-          <div class="help-frame" v-if="$route.name === 'view'">
+          <div class="help-frame" v-if="activeName === 'view'">
             <v-btn class="btn" color="primary" small @click="setCameraPosHandle"
             >把当前视觉设置为初始视角
             </v-btn>
           </div>
           <!--热点列表-->
-          <div class="hotSpot-list" :key="uniqueId" v-if="$route.name === 'hot' && !isLoading">
+          <div class="hotSpot-list" :key="uniqueId" v-if="activeName === 'hot' && !isLoading">
             <div
                 class="hotStop-item"
                 :class="{ 'is-active': item.id === _.get(activePoint, 'id') }"
@@ -297,7 +344,7 @@ export default defineComponent({
             </div>
           </div>
           <!-- 沙盘 -->
-          <div class="sand-table-box" v-if="$route.name === 'sandTable'" id="sandTableBox">
+          <div class="sand-table-box" v-if="activeName=== 'sandTable'" id="sandTableBox">
             <div class="img">
               <img :src="doc.sandTable.url" draggable="false"/>
             </div>
@@ -606,7 +653,7 @@ export default defineComponent({
   width: 100%;
   height: 120px;
 
-  ::v-deep canvas {
+  :deep canvas {
     width: 100% !important;
     height: 100% !important;
   }

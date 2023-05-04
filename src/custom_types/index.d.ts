@@ -66,6 +66,6 @@ export interface Doc {
   scenes: SceneData[]
   sandTable: {
     url: string
-    markers: marker[]
+    markers: Marker[]
   }
 }
