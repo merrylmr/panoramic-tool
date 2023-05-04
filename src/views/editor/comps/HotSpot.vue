@@ -166,7 +166,7 @@ interface Form {
     y: number;
     z: number;
   };
-  title?: {
+  title: {
     show: boolean;
     label: string;
   };
@@ -356,8 +356,8 @@ export default defineComponent({
       }
       context.emit('addPoint', data.form)
     }
-    const toggleDrawerHandle = (v: boolean) => {
-      data.drawer = v
+    const toggleDrawerHandle = () => {
+      data.drawer = !data.drawer
     }
     const sureHandle = (data: any) => {
       data.form.value = data.id;
@@ -372,7 +372,13 @@ export default defineComponent({
 
     watchEffect(() => {
       console.log('watchEffect:', props.activePoint)
-      data.form = _cloneDeep(props.activePoint)
+      data.form = {
+        ..._cloneDeep(props.activePoint),
+        title: {
+          label: '',
+          show: true
+        }
+      }
       if (props.activePoint && props.activePoint.id) {
         data.drawer = true;
       } else {

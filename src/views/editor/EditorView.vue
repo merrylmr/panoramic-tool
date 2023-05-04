@@ -81,6 +81,14 @@ export default defineComponent({
       }
     })
 
+    const getIconPath = (path: string) => {
+      if (path) {
+        return SYS_ICON_MAP1[path as keyof typeof SYS_ICON_MAP1] || path
+      } else {
+        return path
+      }
+
+    }
     const initScene = () => {
       scene = new THREE.Scene()
     }
@@ -253,6 +261,7 @@ export default defineComponent({
       ICON_MAP,
       SYS_ICON_MAP1,
       $route,
+      getIconPath,
       changeMenu(item: menuItem) {
         data.activeName = item.value
       },
@@ -336,8 +345,8 @@ export default defineComponent({
                 :style="transformStyle(item.pos, item)"
                 :key="index"
             >
-              <img :src="SYS_ICON_MAP1[item.iconPath] || item.iconPath"/>
-              <!--      说明、注释渲染        -->
+              <img :src="getIconPath(item.iconPath)"/>
+              <!-- 说明、注释渲染  -->
               <div class="point-item__label" v-if="_.get(item, 'title.show')">
                 {{ item.title.label }}
               </div>

@@ -52,6 +52,7 @@ import type {Marker} from "@/custom_types";
 interface Props {
   form: {
     url: string,
+    value?: string,
     markers: Marker[]
   };
   isShowSceneDlg: boolean;
