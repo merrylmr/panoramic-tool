@@ -1,6 +1,6 @@
 <script lang="ts">
 import type {Doc, Pos, Hot, menuItem, SceneData, Marker} from '@/custom_types/index'
-import {defineComponent, onMounted, reactive, toRefs, computed, nextTick} from 'vue'
+import {defineComponent, onMounted, reactive, toRefs, computed, nextTick, ref} from 'vue'
 // @ts-ignore
 import docJSon from 'json/doc.json'
 import {pointInSceneView, screenVector2World, worldVector2Screen} from './common'
@@ -36,10 +36,11 @@ export default defineComponent({
     let controls: OrbitControls | any = null
     const $route = useRoute()
     let sphereInstance = new Mesh()
+    const editor = ref(null)
 
     const data: Props = reactive({
       doc: docJSon,
-      activeName: 'sandTable',
+      activeName: 'hot',
       uniqueId: '',
       isLoading: true,
       activePoint: {},
@@ -252,11 +253,15 @@ export default defineComponent({
 
       createThumbnail();
     }
+    const clickPointHandle = (item) => {
+      data.activePoint = item;
+    }
     return {
       _,
       ...refData,
       hotSpots,
       transformStyle,
+      editor,
       menuNav: menuNav,
       ICON_MAP,
       SYS_ICON_MAP1,
@@ -268,10 +273,132 @@ export default defineComponent({
       setCameraPosHandle() {
       },
       pointDownHandle(e: MouseEvent, item: Hot) {
+        e.preventDefault();
+        let isDragging = false
+        const setDragTrue = () => {
+          isDragging = true;
+        }
+        let timer = setTimeout(setDragTrue, 200)
+
+        const target = e.currentTarget as HTMLElement
+        let transform = target.style.transform;
+        const reg = /translate\((-?\d+(?:\.\d*)?)px, (-?\d+(?:\.\d*)?)px\)/;
+        transform = transform.match(reg);
+
+        let translateX = parseInt(transform[1]);
+        let translateY = parseInt(transform[2]);
+
+
+        let startPos = {
+          x: e.clientX,
+          y: e.clientY
+        }
+
+        const mouseMoveHandle = (e: MouseEvent) => {
+          isDragging = true;
+
+          const diffX = e.clientX - startPos.x;
+          const diffY = e.clientY - startPos.y;
+          translateX += diffX;
+          translateY += diffY;
+
+          startPos = {
+            x: e.clientX,
+            y: e.clientY
+          }
+          target!.style.transform = `translateZ(0px) translate(${translateX}px,${translateY}px) translate(-40px,-40px)`
+        }
+
+        const mouseUpHandle = () => {
+          if (!isDragging) {
+            clearTimeout(timer);
+            clickPointHandle(item);
+            console.log('mouse up');
+          } else {
+            isDragging = false;
+            console.log('drag over');
+            const pos = screenVector2World({
+              x: translateX,
+              y: translateY
+            }, container, camera)
+            item.pos = {
+              x: pos.x,
+              y: pos.y,
+              z: pos.z,
+            };
+          }
+          document.body.removeEventListener('mousemove', mouseMoveHandle)
+          document.body.removeEventListener('mouseup', mouseUpHandle)
+        }
+        document.body.addEventListener('mousemove', mouseMoveHandle)
+        document.body.addEventListener('mouseup', mouseUpHandle)
       },
-      markerItemDownHandle(e: MouseEvent, item: Marker, index: number) {
+      markerItemDownHandle(e: MouseEvent, item: Marker, i: number) {
+        let startX = e.clientX;
+        let startY = e.clientY;
+        const mouseMove = (e: MouseEvent) => {
+          const x = e.clientX;
+          const y = e.clientY;
+
+          const diffX = x - startX;
+          const diffY = y - startY;
+
+
+          // TODO:边界条件判断
+          item.pos.x += diffX;
+          item.pos.y += diffY;
+
+          startX = e.clientX;
+          startY = e.clientY;
+        }
+        const moveUp = () => {
+          if (data.activeMarkerIndex !== i) {
+            data.activeMarkerIndex = i;
+            // 切换场景
+            const {index} = findTargetScene(item.sceneId);
+            changeSceneHandle(index);
+          }
+          document.body.removeEventListener('mousemove', mouseMove)
+          document.body.removeEventListener('mouseup', moveUp)
+        }
+        document.body.addEventListener('mousemove', mouseMove)
+        document.body.addEventListener('mouseup', moveUp)
       },
       pointMouseDownHandle(e: MouseEvent, item: Marker, index: number) {
+        //  @ts-ignore
+        const nodeList = editor.value.querySelectorAll('.marker-item');
+        const dom = nodeList[index].querySelector('.marker-item__outline');
+        const domRect = dom.getBoundingClientRect();
+        const centerPos = {
+          x: domRect.width / 2 + domRect.x,
+          y: domRect.height / 2 + domRect.y,
+        }
+        let mouseMove = (e: MouseEvent) => {
+          const curMouse = {
+            x: e.clientX,
+            y: e.clientY,
+          }
+          // https://blog.csdn.net/wjlhanhan/article/details/109668342
+          const radians = Math.atan2(curMouse.x - centerPos.x, curMouse.y - centerPos.y);
+          let angle = (radians * (180 / Math.PI) * -1) + 180
+          // 沙盘旋转角度转化到相机
+          console.log('angle:', angle)
+          item.angle = angle;
+
+
+          data.doc.sandTable.markers[index].angle = angle;
+
+          // this.rotate2cameraPos(angle)
+        }
+
+        let mouseUp = () => {
+          console.log('mouseup')
+          document.body.removeEventListener('mousemove', mouseMove)
+          document.body.removeEventListener('mouseup', mouseUp)
+        }
+
+        document.body.addEventListener('mousemove', mouseMove)
+        document.body.addEventListener('mouseup', mouseUp)
       },
       findSandMarkerIndex,
       changeSceneHandle,
@@ -300,7 +427,7 @@ export default defineComponent({
 })
 </script>
 <template>
-  <div class="editor-3d">
+  <div class="editor-3d" ref="editor">
     <div class="header">
       <div class="header-wrapper">
         <div class="sub-title">{{ doc.name }}</div>
