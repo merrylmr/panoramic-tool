@@ -12,7 +12,8 @@ export const ICON_MAP = {
 // png to sprite img
 export const SYS_ICON_MAP = {
   'img/new_spotd1_gif.png': 'img/arrow1.png',
-  'img/new_spotd2_gif.png': 'img/arrow2.png'
+  'img/new_spotd2_gif.png': 'img/arrow2.png',
+  'img/new_spotd1.png': 'img/new_spotd1.png',
 }
 // sprite img to png
 export const SYS_ICON_MAP1 = {

@@ -1,6 +1,6 @@
 <script lang="ts">
 import type {Doc, Pos, Hot, menuItem, SceneData, Marker} from '@/custom_types/index'
-import {defineComponent, onMounted, reactive, toRefs, computed, nextTick, ref} from 'vue'
+import {defineComponent, onMounted, onUnmounted, reactive, toRefs, computed, nextTick, ref} from 'vue'
 // @ts-ignore
 import docJSon from 'json/doc.json'
 import {pointInSceneView, screenVector2World, worldVector2Screen} from './common'
@@ -12,7 +12,7 @@ import * as _ from 'lodash'
 import {useRouter, useRoute} from 'vue-router'
 import HotSpot from "@/views/editor/comps/HotSpot.vue";
 import SandTable from "@/views/editor/comps/SandTable.vue";
-
+import html2canvas from "html2canvas";
 interface Props {
   doc: Doc
   activeName: String
@@ -48,7 +48,7 @@ export default defineComponent({
       activeMarkerIndex: 0,
       params: {},
       isShowPreviewDlg: false,
-      sphere: new Mesh()
+      sphere: new Mesh(),
     })
     const hotSpots = computed(() => {
       return data.doc.scenes[data.activeIndex].hotSpots
@@ -148,6 +148,14 @@ export default defineComponent({
       })
       return {sceneX: target, index: i}
     }
+    const resizeHandle = () => {
+      const width = container.clientWidth
+      const height = container.clientHeight
+      renderer.setSize(width, height);
+
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+    }
     const init = async () => {
       data.isLoading = true
       container = document.getElementById('container')
@@ -164,7 +172,7 @@ export default defineComponent({
       data.params = data.doc.scenes[data.activeIndex].params
       nextTick(() => {
         init()
-
+        createThumbnail()
         const controlChangeHandle = () => {
           data.uniqueId = Date.now() + 'xx'
           render()
@@ -181,8 +189,13 @@ export default defineComponent({
           }
         }
         controls.addEventListener('change', controlChangeHandle)
-        // window.addEventListener('resize', this.resizeHandle);
+        window.addEventListener('resize', resizeHandle);
+
       })
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', resizeHandle);
     })
 
     const refData = toRefs(data)
@@ -216,7 +229,15 @@ export default defineComponent({
       })
     }
     const createThumbnail = () => {
-
+      if (data.activeName !== 'view') return
+      const thumbnailDom = document.querySelector('#preview-thumbnail');
+      html2canvas(container, {
+        useCORS: true,
+        allowTaint: false,
+      }).then(canvas => {
+        thumbnailDom!.innerHTML = ''
+        thumbnailDom!.appendChild(canvas);
+      })
     }
     const changeSceneHandle = async (index: number) => {
       const sceneX = data.doc.scenes[index];
@@ -256,6 +277,21 @@ export default defineComponent({
     const clickPointHandle = (item: Hot) => {
       data.activePoint = item;
     }
+    const setActivePoint = (it: Hot) => {
+      const points = data.doc.scenes[data.activeIndex].hotSpots;
+      const index = points.findIndex(item => {
+        return item.id === it.id
+      })
+      points.splice(index, 1, it)
+    }
+    const changeFovParamsHandle = () => {
+      camera.fov = data.params.fov;
+      camera.near = data.params.near;
+      camera.far = data.params.far;
+
+      camera.updateProjectionMatrix();
+      renderer.render(scene, camera)
+    }
     return {
       _,
       ...refData,
@@ -271,6 +307,9 @@ export default defineComponent({
         data.activeName = item.value
       },
       setCameraPosHandle() {
+        data.doc.scenes[data.activeIndex].cameraPos = _.cloneDeep(camera.position);
+        data.doc.scenes[data.activeIndex].angleX = controls.getAzimuthalAngle() * 180 / Math.PI;
+        createThumbnail()
       },
       pointDownHandle(e: MouseEvent, item: Hot) {
         e.preventDefault();
@@ -402,13 +441,34 @@ export default defineComponent({
       },
       findSandMarkerIndex,
       changeSceneHandle,
-      changeFovParamsHandle() {
-      },
+      changeFovParamsHandle,
       changeHandle(v: any, key: string) {
+        switch (key) {
+          case 'horizontal':
+            data.params.minAzimuthAngle = v[0];
+            data.params.maxAzimuthAngle = v[1];
+            break;
+          case 'vertical':
+            data.params.minPolarAngle = v[0];
+            data.params.maxPolarAngle = v[1];
+            break;
+          case 'fov':
+            data.params.near = v[0];
+            data.params.far = v[1];
+            break;
+          default:
+            break;
+        }
+        changeFovParamsHandle()
       },
-      addPointHandle() {
+
+      addPointHandle(item: Hot) {
+        data.activePoint = _.cloneDeep(item);
+        setActivePoint(item);
       },
-      changePointHandle() {
+      changePointHandle(item: Hot) {
+        data.activePoint = _.cloneDeep(item);
+        setActivePoint(item);
       },
       cancelPointHandle() {
       },
@@ -549,14 +609,20 @@ export default defineComponent({
                 :max="2000"
                 :step="0.1"
                 :value="[params.near, params.far]"
-                @input="changeHandle($event, 'fov')"
+                @change="changeHandle($event, 'fov')"
             ></v-range-slider>
             <v-row>
               <v-col cols="6">
-                <v-text-field label="最近(near)" v-model.number="params.near"></v-text-field>
+                <v-text-field
+                    label="最近(near)"
+                    v-model.number="params.near"
+                    @change="changeFovParamsHandle"></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field label="最远(far)" v-model.number="params.far"></v-text-field>
+                <v-text-field
+                    label="最远(far)"
+                    v-model.number="params.far"
+                    @change="changeFovParamsHandle"></v-text-field>
               </v-col>
             </v-row>
           </div>

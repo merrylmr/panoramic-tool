@@ -37,7 +37,7 @@
             <v-select
                 :items="items"
                 v-model="form.iconType"
-                item-text="label"
+                item-title="label"
                 item-value="value"
                 @change="changeIconTypeHandle"
                 label="图标">
@@ -66,15 +66,14 @@
             <v-slider
                 thumb-label="always"
                 v-model="form.iconSize"
-                min="10"
-                max="100"
+                :min="10"
+                :max="100"
                 @change="changeHandle"
             ></v-slider>
 
-
             <v-select
                 :items="hotTypes"
-                item-text="label"
+                item-title="label"
                 item-value="value"
                 v-model="form.hotType"
                 label="热点类型">
@@ -324,6 +323,7 @@ export default defineComponent({
       changeHandle()
     }
     const changeHandle = () => {
+      console.log('changeHandle111:')
       context.emit('change', data.form)
     }
     const delPointHandle = () => {
@@ -359,8 +359,8 @@ export default defineComponent({
     const toggleDrawerHandle = () => {
       data.drawer = !data.drawer
     }
-    const sureHandle = (data: any) => {
-      data.form.value = data.id;
+    const sureHandle = (item: any) => {
+      data.form.value = item.id;
       data.isShowSceneDlg = false;
       changeHandle();
     }
@@ -373,11 +373,11 @@ export default defineComponent({
     watchEffect(() => {
       console.log('watchEffect:', props.activePoint)
       data.form = {
-        ..._cloneDeep(props.activePoint),
         title: {
           label: '',
           show: true
-        }
+        },
+        ..._cloneDeep(props.activePoint),
       }
       if (props.activePoint && props.activePoint.id) {
         data.drawer = true;
