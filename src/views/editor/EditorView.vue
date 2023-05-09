@@ -253,7 +253,7 @@ export default defineComponent({
 
       createThumbnail();
     }
-    const clickPointHandle = (item) => {
+    const clickPointHandle = (item: Hot) => {
       data.activePoint = item;
     }
     return {
@@ -281,12 +281,12 @@ export default defineComponent({
         let timer = setTimeout(setDragTrue, 200)
 
         const target = e.currentTarget as HTMLElement
-        let transform = target.style.transform;
+        let transform = target.style.transform || '';
         const reg = /translate\((-?\d+(?:\.\d*)?)px, (-?\d+(?:\.\d*)?)px\)/;
-        transform = transform.match(reg);
+        let transformArr = transform.match(reg) || ['', '0', '0']
 
-        let translateX = parseInt(transform[1]);
-        let translateY = parseInt(transform[2]);
+        let translateX = parseInt(transformArr[1]);
+        let translateY = parseInt(transformArr[2]);
 
 
         let startPos = {
