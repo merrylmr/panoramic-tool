@@ -31,7 +31,7 @@
         <v-spacer></v-spacer>
         <v-btn
             color="primary"
-            text
+            variant="text"
             @click="sureAction"
         >
           确定

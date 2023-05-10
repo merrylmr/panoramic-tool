@@ -492,8 +492,8 @@ export default defineComponent({
       <div class="header-wrapper">
         <div class="sub-title">{{ doc.name }}</div>
         <div class="right">
-          <v-btn class="ma-2" small outlined color="success">保存</v-btn>
-          <v-btn class="ma-2" small outlined color="indigo">预览</v-btn>
+          <v-btn class="ma-2" size="small" variant="outlined" color="success">保存</v-btn>
+          <v-btn class="ma-2" size="small" variant="outlined" color="indigo">预览</v-btn>
         </div>
       </div>
     </div>

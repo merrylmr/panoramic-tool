@@ -27,7 +27,7 @@
           <div class="header-close">
             <v-btn
                 small
-                text
+                variant="text"
                 @click="closeDrawHandle">关闭
             </v-btn>
           </div>
