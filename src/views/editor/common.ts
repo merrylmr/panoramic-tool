@@ -51,3 +51,48 @@ export function screenVector2World(point: Pos, dom: HTMLElement, camera: Camera)
   const worldVector = stdVector.unproject(camera)
   return worldVector
 }
+
+
+export class TextureAnimator {
+  private texture: any;
+  private tilesHorizontal: number;
+  private tilesVertical: number;
+  private numberOfTiles: number;
+  private tileDisplayDuration: number;
+  private currentDisplayTime: number;
+  private currentTile: number;
+  constructor(texture: any, tilesHoriz: number, tilesVert: number, numTiles: number, tileDispDuration: number) {
+    this.texture = texture;
+    this.tilesHorizontal = tilesHoriz;
+    this.tilesVertical = tilesVert;
+
+    this.numberOfTiles = numTiles;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(1 / this.tilesHorizontal, 1 / this.tilesVertical);
+    this.tileDisplayDuration = tileDispDuration;
+    this.currentDisplayTime = 0;
+    this.currentTile = this.numberOfTiles;
+
+  }
+
+  update(milliSec:number) {
+    this.currentDisplayTime += milliSec;
+
+    while (this.currentDisplayTime > this.tileDisplayDuration) {
+      this.currentDisplayTime -= this.tileDisplayDuration;
+      this.currentTile--;
+      if (this.currentTile === 0) {
+        this.currentTile = this.numberOfTiles;
+      }
+
+      const currentColumn = this.currentTile % this.tilesHorizontal; // 0
+      this.texture.offset.x = currentColumn / this.tilesHorizontal; // 0
+
+      const currentRow = Math.floor(this.currentTile / this.tilesHorizontal); // this.currentTile
+
+      this.texture.offset.y = currentRow / this.tilesVertical; //  /25
+    }
+  }
+
+
+}

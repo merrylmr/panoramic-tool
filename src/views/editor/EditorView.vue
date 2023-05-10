@@ -12,6 +12,7 @@ import * as lodash from 'lodash'
 import {useRouter, useRoute} from 'vue-router'
 import HotSpot from "@/views/editor/comps/HotSpot.vue";
 import SandTable from "@/views/editor/comps/SandTable.vue";
+import PreviewDlg from "@/views/editor/comps/Preview.vue";
 import html2canvas from "html2canvas";
 interface Props {
   doc: Doc
@@ -27,7 +28,7 @@ interface Props {
 
 export default defineComponent({
   name: 'EditorView',
-  components: {HotSpot, SandTable},
+  components: {HotSpot, SandTable, PreviewDlg},
   setup(props, context) {
     let container: any = null
     let scene: Scene = new Scene()
@@ -510,7 +511,9 @@ export default defineComponent({
         <div class="sub-title">{{ doc.name }}</div>
         <div class="right">
           <v-btn class="ma-2" size="small" variant="outlined" color="success">保存</v-btn>
-          <v-btn class="ma-2" size="small" variant="outlined" color="indigo">预览</v-btn>
+          <v-btn class="ma-2" size="small" variant="outlined" color="indigo"
+                 @click="isShowPreviewDlg=true">预览
+          </v-btn>
         </div>
       </div>
     </div>
@@ -673,12 +676,12 @@ export default defineComponent({
         max-width="800px"
         width="800px"
         :fullscreen="false"
-        :value="isShowPreviewDlg"
+        v-model="isShowPreviewDlg"
         :overlay-opacity="0.8"
         content-class="preview-dlg"
         @click:outside="isShowPreviewDlg = false"
     >
-      <!--      <PreviewDlg :doc="doc"></PreviewDlg>-->
+      <PreviewDlg :doc="doc"></PreviewDlg>
     </v-dialog>
   </div>
 </template>
