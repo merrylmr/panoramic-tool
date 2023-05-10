@@ -9,16 +9,11 @@
 
     </div>
 
-
     <div
-        transition="slide-x-reverse-transition"
         v-if="drawer"
         class="right-panel"
         height="100vh"
-        :right="true"
-        :hide-overlay="true"
-        @input="toggleDrawerHandle"
-    >
+          >
       <div class="pa-4">
         <div class="header">
           <div class="header-title"
@@ -33,7 +28,6 @@
           </div>
         </div>
         <div class="body">
-          <v-form>
             <v-select
                 :items="items"
                 v-model="form.iconType"
@@ -62,7 +56,7 @@
                 @change="changeHandle"
                 placeholder="请输入图标链接">
             </v-text-field>
-            <v-subheader>图标大小</v-subheader>
+            <div>图标大小</div>
             <v-slider
                 thumb-label="always"
                 v-model="form.iconSize"
@@ -101,20 +95,19 @@
                 <v-checkbox
                     label="显示"
                     v-model="form.title.show"
+                    hide-details
                     @change="changeHandle">
                 </v-checkbox>
               </div>
               <div class="form-item__value">
                 <v-text-field
                     v-model="form.title.label"
-                    @change="changeHandle"
-                    placeholder="请输入标题">
+                    placeholder="请输入标题"
+                    @change="changeHandle">
                 </v-text-field>
               </div>
             </div>
 
-
-          </v-form>
         </div>
         <div class="footer">
           <v-btn @click="delPointHandle()">删除</v-btn>
@@ -323,8 +316,8 @@ export default defineComponent({
       changeHandle()
     }
     const changeHandle = () => {
-      console.log('changeHandle111:')
-      context.emit('change', data.form)
+      console.log('changeHandle111:',data.form)
+      context.emit('changeX', data.form)
     }
     const delPointHandle = () => {
       context.emit('delPoint')
@@ -369,9 +362,8 @@ export default defineComponent({
       context.emit('cancel')
     }
 
-
+// 监听activePoint变化
     watchEffect(() => {
-      console.log('watchEffect:', props.activePoint)
       data.form = {
         title: {
           label: '',
@@ -379,6 +371,7 @@ export default defineComponent({
         },
         ..._cloneDeep(props.activePoint),
       }
+      console.log('watchEffect:', props.activePoint,data.form)
       if (props.activePoint && props.activePoint.id) {
         data.drawer = true;
       } else {

@@ -8,7 +8,7 @@ import {ICON_MAP, SYS_ICON_MAP1} from '@/assets/js/const'
 import * as THREE from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
 import {Camera, Mesh, Scene, Texture, WebGLRenderer} from 'three'
-import * as _ from 'lodash'
+import * as lodash from 'lodash'
 import {useRouter, useRoute} from 'vue-router'
 import HotSpot from "@/views/editor/comps/HotSpot.vue";
 import SandTable from "@/views/editor/comps/SandTable.vue";
@@ -60,6 +60,7 @@ export default defineComponent({
 
     const transformStyle = computed(() => {
       return (point: Pos, item: Hot) => {
+        console.log('transformStyle pos:', point, data.doc.scenes[data.activeIndex].hotSpots)
         let pos = worldVector2Screen(
             {
               x: point.x,
@@ -69,7 +70,6 @@ export default defineComponent({
             container,
             camera
         )
-        console.log('transformStyle pos:', pos)
         const visible = pointInSceneView(point, camera)
         return {
           transform: `translateZ(0px) translate(${pos.x}px,${pos.y}px) translate(-${
@@ -293,7 +293,7 @@ export default defineComponent({
       renderer.render(scene, camera)
     }
     return {
-      _,
+      lodash,
       ...refData,
       hotSpots,
       transformStyle,
@@ -307,7 +307,7 @@ export default defineComponent({
         data.activeName = item.value
       },
       setCameraPosHandle() {
-        data.doc.scenes[data.activeIndex].cameraPos = _.cloneDeep(camera.position);
+        data.doc.scenes[data.activeIndex].cameraPos = lodash.cloneDeep(camera.position);
         data.doc.scenes[data.activeIndex].angleX = controls.getAzimuthalAngle() * 180 / Math.PI;
         createThumbnail()
       },
@@ -463,18 +463,35 @@ export default defineComponent({
       },
 
       addPointHandle(item: Hot) {
-        data.activePoint = _.cloneDeep(item);
-        setActivePoint(item);
+        // 计算pos,当前窗口的中间位置
+        const rect = container.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const pos = screenVector2World({x: centerX, y: centerY}, container, camera);
+        console.log('addPointHandle pos:', pos)
+        const point = lodash.cloneDeep(item);
+        point.pos = pos;
+        data.doc.scenes[data.activeIndex].hotSpots.push(point);
+        data.activePoint = point
       },
       changePointHandle(item: Hot) {
-        data.activePoint = _.cloneDeep(item);
+        console.log('changePointHandle', item)
+        data.activePoint = lodash.cloneDeep(item);
         setActivePoint(item);
       },
       cancelPointHandle() {
+        data.activePoint = {};
       },
       delPointHandle() {
+        const points = data.doc.scenes[data.activeIndex].hotSpots;
+        const index = points.findIndex(item => {
+          return item.id === data.activePoint.id
+        })
+        points.splice(index, 1)
+        data.activePoint = {};
       },
-      changeSandTableHandle() {
+      changeSandTableHandle(sandTable: Doc['sandTable']) {
+        data.doc.sandTable = sandTable;
       },
       changeMarkerIndexHandle(i: number, item: Marker) {
         data.activeMarkerIndex = i;
@@ -526,7 +543,7 @@ export default defineComponent({
           <div class="hotSpot-list" :key="uniqueId" v-if="activeName === 'hot' && !isLoading">
             <div
                 class="hotStop-item"
-                :class="{ 'is-active': item.id === _.get(activePoint, 'id') }"
+                :class="{ 'is-active': item.id === lodash.get(activePoint, 'id') }"
                 @mousedown="pointDownHandle($event, item)"
                 v-for="(item, index) in hotSpots"
                 :style="transformStyle(item.pos, item)"
@@ -534,7 +551,7 @@ export default defineComponent({
             >
               <img :src="getIconPath(item.iconPath)"/>
               <!-- 说明、注释渲染  -->
-              <div class="point-item__label" v-if="_.get(item, 'title.show')">
+              <div class="point-item__label" v-if="lodash.get(item, 'title.show')">
                 {{ item.title.label }}
               </div>
             </div>
@@ -631,9 +648,9 @@ export default defineComponent({
           <HotSpot
               :list="hotSpots"
               :activePoint="activePoint"
-              :doc="_.cloneDeep(doc)"
+              :doc="lodash.cloneDeep(doc)"
               @addPoint="addPointHandle"
-              @change="changePointHandle"
+              @changeX="changePointHandle"
               @cancel="cancelPointHandle"
               @delPoint="delPointHandle"
           >
@@ -661,7 +678,7 @@ export default defineComponent({
         content-class="preview-dlg"
         @click:outside="isShowPreviewDlg = false"
     >
-      <PreviewDlg :doc="doc"></PreviewDlg>
+      <!--      <PreviewDlg :doc="doc"></PreviewDlg>-->
     </v-dialog>
   </div>
 </template>
