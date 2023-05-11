@@ -1,7 +1,7 @@
 <template>
   <v-card class="preview-wrapper">
     <!--      <v-card-title>作品预览</v-card-title>-->
-    <div id="preview">
+    <div id="preview" >
     </div>
     <div class="hot-point__list"
          :key="uniqueId">
@@ -21,7 +21,7 @@
     <div class="scene-list">
       <div class="scene-item"
            :class="{'is-active':index===activeIndex}"
-           v-for="(item,index) in doc.scenes"
+           v-for="(item,index) in doc?.scenes"
            :key="index"
            @click="changeSceneHandle(item,index)">
         <div class="scene-item__thumbnail">
@@ -44,14 +44,14 @@
 
     <!--      </div>-->
     <!--    </div>-->
-    <div class="sand-table-box">
+    <div class="sand-table-box" ref="preview">
       <div class="marker-list">
         <div class="img">
-          <img :src="doc.sandTable.url"
+          <img :src="doc?.sandTable.url"
                draggable="false">
         </div>
         <div class="marker-item"
-             v-for="(item,index) in doc.sandTable.markers"
+             v-for="(item,index) in doc?.sandTable.markers"
              :key="index"
              :class="{'is-active':activeMarkerIndex===index}"
              :style="{left:item.pos.x+'px',top:item.pos.y+'px'}"
@@ -75,7 +75,19 @@
 import * as THREE from 'three';
 import type {Doc, Pos, Hot, menuItem, SceneData, Marker} from '@/custom_types/index'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls'
-import {defineComponent, reactive, toRefs, computed, onMounted, onUnmounted, nextTick} from 'vue'
+import {
+  defineComponent,
+  reactive,
+  ref,
+  toRefs,
+  computed,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  withDefaults,
+  defineProps
+} from 'vue'
+import type {PropType} from 'vue'
 import {pointInSceneView, worldVector2Screen, TextureAnimator} from '../common'
 // @ts-ignore
 import gsap from 'gsap';
@@ -104,7 +116,7 @@ export default defineComponent({
       type: Boolean
     },
     doc: {
-      type: Object,
+      type: Object as PropType<Doc>,
       default: () => {
         return docJSON
       }
@@ -118,6 +130,7 @@ export default defineComponent({
     let renderer: WebGLRenderer = new WebGLRenderer()
     let sphereInstance = new Mesh()
     let clock = new THREE.Clock()
+    let preview = ref();
 
     const transformStyle = computed(() => {
       return (point: Pos, item: Hot) => {
@@ -287,12 +300,26 @@ export default defineComponent({
         transparent: false,
         opacity: 1,
         duration: 1.5,
-        onComplete: async () => {
+        onComplete: () => {
           // 重新渲染热点
-          data.poiObjects = await renderPointList(scene, item.hotSpots);
-          hotLabelStyles()
+          renderPointList(scene, item.hotSpots).then(() => {
+            data.poiObjects
+            hotLabelStyles()
+          });
+
         }
       });
+
+      camera.fov = item.params.fov;
+      camera.near = item.params.near;
+      camera.far = item.params.far;
+      // 更新摄像机投影矩阵。在任何参数被改变以后必须被调用
+      camera.updateProjectionMatrix();
+      // 相机位置
+      const cameraPos = item.cameraPos;
+      camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z)
+      // important:通过参数更新相机位置，必须调用controls的update才会生效
+      controls.update();
     }
 
     const initScene = () => {
@@ -366,10 +393,11 @@ export default defineComponent({
         const angleX = controls.getAzimuthalAngle() * 180 / Math.PI;
         const marker = props!.doc!.sandTable.markers[data.activeMarkerIndex];
         if (marker) {
-          const {scene} = findTargetScene(marker.sceneId);
-          marker.angle += (angleX - scene.angleX);
+          const {scene: sceneData} = findTargetScene(marker.sceneId);
+          if (!sceneData) return
+          marker.angle += (angleX - sceneData.angleX);
           marker.angle = marker.angle % 360;
-          scene.angleX = angleX
+          sceneData.angleX = angleX
         }
         hotLabelStyles();
       })
@@ -423,10 +451,60 @@ export default defineComponent({
       }
       data.activeMarkerIndex = i;
       const {scene: sceneData, index} = findTargetScene(item.sceneId)
-      changeSceneHandle(sceneData, index)
+      if (sceneData) {
+        changeSceneHandle(sceneData, index)
+      }
     }
-    const pointMouseDownHandle = (e:MouseEvent,item:Marker,index:string) => {
-     // TODO:待完善
+    // 已知水平角度，转化成相机的坐标
+    // https://www.wjceo.com/blog/threejs2/2018-12-05/181.html
+    const rotate2cameraPos = (angle: number) => {
+      // 距离
+      const r = controls.object.position.distanceTo(controls.target);
+      // 垂直方向角度（y轴）
+      const phi = controls.getPolarAngle();
+      // 水平方向的角度（x轴）
+      const theta = angle * Math.PI / 180;
+      const x = r * Math.cos(phi - Math.PI / 2) * Math.sin(theta) + controls.target.x;
+      const y = r * Math.sin(phi + Math.PI / 2) + controls.target.y;
+      const z = r * Math.cos(phi - Math.PI / 2) * Math.cos(theta) + controls.target.z;
+      controls.object.position.set(x, y, z);
+      controls.object.lookAt(controls.target);
+      controls.update();
+      return {x, y, z}
+    }
+    const pointMouseDownHandle = (e: MouseEvent, item: Marker, index: number) => {
+      const nodeList = preview.value.querySelectorAll('.marker-item');
+      console.log('nodeList:', nodeList, index)
+      const dom = nodeList[index].querySelector('.marker-item__outline');
+      const domRect = dom.getBoundingClientRect();
+
+      const centerPos = {
+        x: domRect.width / 2 + domRect.x,
+        y: domRect.height / 2 + domRect.y,
+      }
+      let mouseMove = (e: MouseEvent) => {
+        e.preventDefault()
+        const curMouse = {
+          x: e.clientX,
+          y: e.clientY,
+        }
+        // https://blog.csdn.net/wjlhanhan/article/details/109668342
+        const radians = Math.atan2(curMouse.x - centerPos.x, curMouse.y - centerPos.y);
+        let angle = (radians * (180 / Math.PI) * -1) + 180
+        // 沙盘旋转角度转化到相机
+        console.log('angle:', angle)
+        item.angle = angle;
+        rotate2cameraPos(angle);
+      }
+
+      let mouseUp = () => {
+        console.log('mouseUp')
+        document.body.removeEventListener('mousemove', mouseMove)
+        document.body.removeEventListener('mouseup', mouseUp)
+      }
+
+      document.body.addEventListener('mousemove', mouseMove)
+      document.body.addEventListener('mouseup', mouseUp)
 
     }
     onMounted(() => {
@@ -443,6 +521,7 @@ export default defineComponent({
     return {
       ...toRefs(data),
       transformStyle,
+      preview,
       hotLabelStyles,
       closeHandle,
       degToRad,

@@ -37,7 +37,7 @@ export default defineComponent({
     let controls: OrbitControls | any = null
     const $route = useRoute()
     let sphereInstance = new Mesh()
-    const editor = ref(null)
+    const editor = ref()
 
     const data: Props = reactive({
       doc: docJSon,
@@ -405,7 +405,6 @@ export default defineComponent({
         document.body.addEventListener('mouseup', moveUp)
       },
       pointMouseDownHandle(e: MouseEvent, item: Marker, index: number) {
-        //  @ts-ignore
         const nodeList = editor.value.querySelectorAll('.marker-item');
         const dom = nodeList[index].querySelector('.marker-item__outline');
         const domRect = dom.getBoundingClientRect();
