@@ -35,7 +35,6 @@ export default defineComponent({
     let camera: Camera | any = null
     let renderer: WebGLRenderer = new WebGLRenderer()
     let controls: OrbitControls | any = null
-    const $route = useRoute()
     let sphereInstance = new Mesh()
     const editor = ref()
 
@@ -302,7 +301,6 @@ export default defineComponent({
       menuNav: menuNav,
       ICON_MAP,
       SYS_ICON_MAP1,
-      $route,
       getIconPath,
       changeMenu(item: menuItem) {
         data.activeName = item.value
@@ -806,6 +804,7 @@ export default defineComponent({
     width: 100%;
     height: 100%;
     position: relative;
+    overflow:hidden;
   }
 
   .scene-list {
